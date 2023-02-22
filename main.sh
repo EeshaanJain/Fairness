@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=0 python main.py --run_name plain_var --num_iter 10

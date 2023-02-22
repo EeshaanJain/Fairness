@@ -11,6 +11,17 @@ import matplotlib.pyplot as plt
 import logging
 from vae_models import *
 import sys
+import random
+
+def set_seed(seed):
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
 def initial_preprocess(name):
     DATA_PATH = "data"
     if name == "adult_income":
@@ -253,7 +264,8 @@ class EarlyStopping:
         score = -val_loss
         if self.best_score is None:
             self.best_score = score
-            self.save_checkpoint(val_loss, model)
+            if self.save_path is not None:
+                self.save_checkpoint(val_loss, model)
         elif score < self.best_score + self.delta:
             self.counter += 1
             self.trace_func(
@@ -263,8 +275,10 @@ class EarlyStopping:
                 self.early_stop = True
         else:
             self.best_score = score
-            self.save_checkpoint(val_loss, model)
             self.counter = 0
+            if self.save_path is not None:
+                self.save_checkpoint(val_loss, model)
+            
 
     def save_checkpoint(self, val_loss, model):
         if self.verbose:
@@ -337,4 +351,16 @@ def query_nearby(s, dx, dy, k):
     dx = dx[not_topk_indxs]
     dy = dy[not_topk_indxs]
     return queries, queries_y, dx, dy
-        
+
+def compute_disparity(x1, x2, use_blackbox=True, blackbox=None):
+    if use_blackbox:
+        assert blackbox != None
+        y1 = blackbox(x1)
+        y2 = blackbox(x2)
+        y1[y1 > 0.5] = 1
+        y1[y1 <= 0.5] = 0
+        y2[y2 > 0.5] = 1
+        y2[y2 <= 0.5] = 0
+        return torch.abs(y1.mean() - y2.mean())
+    else:
+        return torch.abs(x1.mean() - x2.mean())
