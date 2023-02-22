@@ -333,7 +333,8 @@ def query_nearby(s, dx, dy, k):
     _, topk_idxs = torch.topk(all_norms, k)
     not_topk_indxs = complement_idx(topk_idxs, dx.shape[0])
     queries = dx[topk_idxs]
+    queries_y = dy[topk_idxs]
     dx = dx[not_topk_indxs]
     dy = dy[not_topk_indxs]
-    return queries, dx, dy
+    return queries, queries_y, dx, dy
         
